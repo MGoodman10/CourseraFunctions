@@ -13,6 +13,7 @@ names(subset.df) <- c("hosp.name","state.col", "mortality")
 
 state.data <- subset(subset.df, state.col==state)
 print(state.data)
+## Need to change "Not Available" to NA in mortality column
 bad <- is.na(state.data$mortality)
 good.data <- state.data[!bad, ]
 
