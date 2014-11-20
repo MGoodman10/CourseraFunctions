@@ -1,4 +1,4 @@
-rankhospital <- function(state, outcome, num) {
+rankall <- function(outcome, num="best") {
         path <- paste(getwd(),"/", "hospdata", sep="")
         directory <- file.path(path, "outcome-of-care-measures.csv")
         raw.data <- read.csv(directory, header=TRUE)
@@ -15,33 +15,49 @@ rankhospital <- function(state, outcome, num) {
                                 outcome.df$outcome.lst==outcome])
         
         if(!is.element(outcome, outcome.lst)) {stop("invalid outcome")}
-        if(!is.element(state, state.abb)) { stop("invalid state")}
         
         subset.df <- subset(raw.data, select=c("Hospital.Name", "State", col.idx))
         names(subset.df) <- c("hosp.name","state.col", "mortality")
-        state.data <- subset(subset.df, state.col==state)
-        
-        num.state <- nrow(state.data)
-        if(num.state==0) { bst.hospital <- NULL
-                      return(bst.hospital)}
                 
-        state.data$mortality[state.data$mortality=="Not Available"] <- NA
-        bad <- is.na(state.data$mortality)
-        good.data <- state.data[!bad, ]
-        good.data$mortality <- as.numeric(as.character(good.data$mortality))
-                
-        order.pop <- order(good.data$mortality, good.data$hosp.name)
-        result.data <- good.data[order.pop, ]
+        output.frame <- NULL
+        output.frame <- data.frame(hospital=character(),state=character())
         
-        if(num=='best') {hosp.rank <- 1}
-        else if(num=='worst') {hosp.rank <- nrow(good.data)}
-        else {hosp.rank <- num}
-        
-        if(hosp.rank > nrow(good.data)) { bst.hospital <- NA
-                           return(bst.hospital)}
+        ## state.azz <- c("AK", "AL", "AZ")
+        state.list <- unique(raw.data$State)
+        for (i in state.list) { 
+                state <- i
                 
-        bst.hospital <- as.character(result.data$hosp.name[hosp.rank])
-        bst.hospital
+                state.data <- subset(subset.df, state.col==state)
+                       
+                num.state <- nrow(state.data)
+                if(num.state==0) { bst.hospital <- NA
+                                  return(bst.hospital)}
+                               
+                state.data$mortality[state.data$mortality=="Not Available"] <- NA
+                bad <- is.na(state.data$mortality)
+                good.data <- state.data[!bad, ]
+                good.data$mortality <- as.numeric(as.character(good.data$mortality))
+                               
+                order.pop <- order(good.data$mortality, good.data$hosp.name)
+                result.data <- good.data[order.pop, ]
+                               
+                if(num=='best') {hosp.rank <- 1}
+                else if(num=='worst') {hosp.rank <- nrow(good.data)}
+                else {hosp.rank <- num}
+                               
+                if(hosp.rank > nrow(good.data)) { bst.hospital <- NA }
+                else {bst.hospital <- 
+                              as.character(result.data$hosp.name[hosp.rank])}
+                               
+                new.frame <- data.frame(hospital=bst.hospital, state=i)
+                output.frame <- rbind(output.frame, new.frame)
+        }
         
-                
+        output.frame$hospital <- as.character(output.frame$hospital)
+        output.frame$state <- as.character(output.frame$state)
+        order.output <- order(output.frame$state)
+        final.output <- output.frame[order.output, ]
+        rownames(final.output) <- final.output[,2]
+        ##print(output.frame)
+        final.output        
 }
